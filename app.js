@@ -254,16 +254,25 @@
       }
       ctx.stroke();
 
-      /* 四隅のマスの名前。向きが合っているかは、これを見れば分かる */
-      ctx.font = 'bold ' + Math.round(size.w / 28) + 'px system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      /* 四隅のマスの名前。向きが合っているかは、これを見れば分かる。
+       * マスの真ん中に書くと駒の下に隠れる（初期配置では四隅に必ず香がいる）。
+       * 盤の角へ寄せて、地色の札に載せる。 */
+      var fs = Math.round(size.w / 30), pad = Math.round(size.w / 110);
+      ctx.font = 'bold ' + fs + 'px system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
       [[0, 0], [8, 0], [0, 8], [8, 8]].forEach(function (c) {
-        var p = { x: (c[0] + 0.5) * size.w / C.N, y: (c[1] + 0.5) * size.h / C.N };
-        ctx.fillStyle = 'rgba(255,255,255,.85)';
-        ctx.fillText(C.squareName(c[0], c[1]), p.x + 1, p.y + 1);
+        var nm = C.squareName(c[0], c[1]);
+        var bw = ctx.measureText(nm).width + pad * 2, bh = fs + pad * 1.4;
+        var x = c[0] === 0 ? 2 : size.w - bw - 2;
+        var y = c[1] === 0 ? 2 : size.h - bh - 2;
+        ctx.fillStyle = 'rgba(250,249,246,.94)';
+        ctx.fillRect(x, y, bw, bh);
+        ctx.strokeStyle = 'rgba(178,58,46,.5)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, bw - 1, bh - 1);
         ctx.fillStyle = '#B23A2E';
-        ctx.fillText(C.squareName(c[0], c[1]), p.x, p.y);
+        ctx.fillText(nm, x + pad, y + pad * 0.6);
       });
     }
     renderChecks(m);

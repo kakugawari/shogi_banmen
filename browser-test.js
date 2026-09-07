@@ -72,11 +72,13 @@ const MAKE_PHOTO = ({ x, y, size }) => `
   input.dispatchEvent(new Event('change', { bubbles: true }));
 `;
 
-/** 直した盤の、マス (cx,cy) の真ん中の明るさ */
+/** 直した盤の、マス (cx,cy) の明るさ。
+ *  真ん中ではなく、すこし盤の内側を見る。四隅にはマス名の札が載るため。 */
 const cellLuma = (page, cx, cy) => page.evaluate(({ cx, cy }) => {
   const cv = document.getElementById('board');
-  const px = Math.round((cx + 0.5) * cv.width / 9);
-  const py = Math.round((cy + 0.5) * cv.height / 9);
+  const fx = cx < 4 ? 0.72 : 0.28, fy = cy < 4 ? 0.72 : 0.28;
+  const px = Math.round((cx + fx) * cv.width / 9);
+  const py = Math.round((cy + fy) * cv.height / 9);
   const d = window.__app.boardPixel(px, py);
   return Math.round((d[0] + d[1] + d[2]) / 3);
 }, { cx, cy });
