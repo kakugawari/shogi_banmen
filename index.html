@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>盤あわせ</title>
+<meta name="description" content="将棋の対局動画から、盤をまっすぐ切り出す。撮り方をたしかめる道具">
+<meta name="theme-color" content="#FAF9F6">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+
+<header id="top">
+  <h1>盤あわせ</h1>
+  <p class="sub">撮った動画から盤を切り出して、その撮り方でいけるかを見る</p>
+</header>
+
+<main>
+
+  <section class="step" id="s1">
+    <h2><span class="no">1</span>動画か写真をえらぶ</h2>
+    <label class="pick">
+      <input type="file" id="file" accept="video/*,image/*">
+      <span class="pick-face">えらぶ</span>
+    </label>
+    <p class="note" id="fileInfo">まだえらんでいない。写真1枚でも撮り方は確かめられる。</p>
+  </section>
+
+  <section class="step hidden" id="s2">
+    <h2><span class="no">2</span>はじめの駒を並べたところを出す</h2>
+    <div class="seek">
+      <input type="range" id="seek" min="0" max="1" step="0.01" value="0">
+      <output id="seekAt">0.00 秒</output>
+    </div>
+    <div class="row">
+      <button type="button" class="btn" id="back1">◀ 0.1秒</button>
+      <button type="button" class="btn" id="fwd1">0.1秒 ▶</button>
+    </div>
+  </section>
+
+  <section class="step hidden" id="s3">
+    <h2><span class="no">3</span>盤の四隅を合わせる</h2>
+    <p class="note">合わせるのは<b>マス目の外側の線</b>の四隅。木の縁ではない。</p>
+    <div class="canvas-wrap">
+      <canvas id="shot"></canvas>
+      <canvas id="loupe" class="loupe hidden" width="132" height="132"></canvas>
+    </div>
+    <div class="row">
+      <button type="button" class="btn" id="reset">はじめの位置に戻す</button>
+      <label class="check"><input type="checkbox" id="showGrid" checked>マス目を重ねる</label>
+    </div>
+  </section>
+
+  <section class="step hidden" id="s4">
+    <h2><span class="no">4</span>先手はどちら側？</h2>
+    <div class="sides">
+      <button type="button" class="side on" id="sideNear" data-side="near">
+        <span class="pic"><i class="far">△</i><i class="bd"></i><i class="near">▲</i></span>
+        手前（下）
+      </button>
+      <button type="button" class="side" id="sideFar" data-side="far">
+        <span class="pic"><i class="far">▲</i><i class="bd"></i><i class="near">△</i></span>
+        奥（上）
+      </button>
+    </div>
+  </section>
+
+  <section class="step hidden" id="s5">
+    <h2><span class="no">5</span>まっすぐに直した盤</h2>
+    <div class="canvas-wrap board-wrap">
+      <canvas id="board"></canvas>
+    </div>
+    <ul class="checks" id="checks"></ul>
+    <p class="note" id="perf"></p>
+  </section>
+
+</main>
+
+<footer>
+  <p class="note">
+    ここまでが第0段。まだ駒は読んでいない。<br>
+    「その撮り方でいけるか」を目で見て決めるための道具。
+  </p>
+</footer>
+
+<script src="./core.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

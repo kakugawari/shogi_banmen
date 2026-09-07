@@ -1,0 +1,108 @@
+/* 色は棋譜アプリ kifu と同じ決めごとにそろえる。地は白、駒は木、印は水色。
+   ただし点検の合図だけは緑と琥珀を足した。
+   「よい」と「気をつけて」を朱ひとつで兼ねると、どちらか分からなくなるため。
+   どちらも地 #FAF9F6 に対してコントラスト 4.5 以上 (緑 6.9 / 琥珀 5.2)。 */
+:root {
+  --bg: #FAF9F6;
+  --ink: #231D16;
+  --brown: #4B3621;
+  --line: #E2DDD4;
+  --muted: #6B6259;
+  --red: #B23A2E;
+  --pink: #E0628A;
+  --cyan: #32C8F0;
+  --green: #26614A;
+  --amber: #8A6205;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.7 system-ui, -apple-system, "Hiragino Kaku Gothic ProN", sans-serif;
+}
+
+body { padding: 0 16px calc(32px + env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
+
+#top { padding: 20px 0 8px; }
+h1 { font-size: 22px; margin: 0; letter-spacing: .04em; }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+
+.step { border-top: 1px solid var(--line); padding: 18px 0; }
+.step.hidden { display: none; }
+h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+.no {
+  display: inline-grid; place-items: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--brown); color: #fff; font-size: 12px; font-weight: 700;
+}
+
+.note { color: var(--muted); font-size: 13px; margin: 8px 0 0; }
+.note b { color: var(--ink); }
+
+/* えらぶボタン。input は隠して label を押させる */
+.pick input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.pick-face {
+  display: inline-block; padding: 12px 28px; border-radius: 10px;
+  background: var(--brown); color: #fff; font-weight: 700; cursor: pointer;
+}
+.pick input:focus-visible + .pick-face { outline: 3px solid var(--cyan); outline-offset: 2px; }
+
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.btn {
+  font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 8px;
+  border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer;
+}
+.btn:active { background: var(--line); }
+.check { font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+
+.seek { display: flex; align-items: center; gap: 10px; }
+#seek { flex: 1; accent-color: var(--brown); }
+#seekAt { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); min-width: 5.5em; }
+
+/* 画像を出すところ。canvas は幅いっぱい、高さは中身で決まる */
+.canvas-wrap { position: relative; line-height: 0; }
+#shot, #board { width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 8px; background: #EFEBE4; }
+#shot { touch-action: none; }             /* 指で四隅を動かすので、ここでは画面を送らせない */
+.board-wrap { box-shadow: 0 2px 8px rgba(0,0,0,.08); border-radius: 8px; }
+
+/* 四隅をつまんでいる間だけ出る虫めがね */
+.loupe {
+  position: absolute; top: 8px; right: 8px;
+  width: 88px; height: 88px; border-radius: 50%;
+  border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  pointer-events: none;
+}
+.loupe.left { right: auto; left: 8px; }
+.loupe.hidden { display: none; }
+
+/* 先手はどちら側 */
+.sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.side {
+  font: inherit; font-size: 14px; padding: 10px; border-radius: 10px; cursor: pointer;
+  border: 2px solid var(--line); background: #fff; color: var(--ink);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.side.on { border-color: var(--brown); background: #FFF8EC; font-weight: 700; }
+.pic { display: grid; gap: 2px; justify-items: center; line-height: 1; }
+.pic i { font-style: normal; font-size: 11px; color: var(--muted); }
+.side.on .pic i { color: var(--brown); }
+.pic .bd { width: 34px; height: 24px; border: 1px solid var(--brown); border-radius: 2px; background: #F0E2C4; }
+
+/* 点検の結果 */
+.checks { list-style: none; margin: 14px 0 0; padding: 0; }
+.checks li { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.checks li:first-child { border-top: 0; }
+.mark { flex: none; width: 1.4em; font-weight: 700; }
+.ok   .mark { color: var(--green); }
+.warn .mark { color: var(--amber); }
+.bad  .mark { color: var(--red); }
+.ck-label { flex: none; width: 8.5em; color: var(--muted); }
+.ck-body { flex: 1; }
+.ck-hint { display: block; color: var(--muted); font-size: 12px; }
+.ok .ck-hint { display: none; }              /* うまくいっているときは直しかたを出さない */
+
+footer { border-top: 1px solid var(--line); padding-top: 14px; }
