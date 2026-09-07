@@ -28,8 +28,10 @@ html = html.replace(/<link rel="stylesheet" href="\.\/styles\.css">/,
 html = html.replace(/<script src="\.\/(core|app)\.js"><\/script>/g,
   (_, name) => '<script>\n' + read(name + '.js').trim() + '\n</script>');
 
-/* アイコンは1枚にまとめられないので落とす (Artifact 側が絵文字を付ける) */
-html = html.replace(/\s*<link rel="icon"[^>]*>/, '');
+/* アイコンとマニフェストは1枚にまとめられないので落とす
+ * (Artifact 側が絵文字のアイコンを付ける) */
+html = html.replace(/\s*<!--[^>]*-->(?=\s*<link rel="apple-touch-icon")/g, '');
+html = html.replace(/\s*<link rel="(icon|apple-touch-icon|manifest)"[^>]*>/g, '');
 
 if (fragment) {
   /* <body> の中身を取り出し、<title> と <style> だけを前に付け直す */

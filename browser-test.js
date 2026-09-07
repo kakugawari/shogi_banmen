@@ -175,6 +175,21 @@ async function run() {
     const ms = await page.evaluate(() => window.__app.state().lastMs);
     ok(ms < 1500, `盤を直すのに ${ms} ミリ秒 (720画素まで)`);
 
+    section('アイコン');
+    const icons = await page.evaluate(() => ({
+      apple: document.querySelector('link[rel="apple-touch-icon"]')?.getAttribute('href'),
+      manifest: document.querySelector('link[rel="manifest"]')?.getAttribute('href'),
+      title: document.querySelector('meta[name="apple-mobile-web-app-title"]')?.content
+    }));
+    /* iOS は apple-touch-icon に SVG を使えない。使うと別のものが出る */
+    ok(/\.png$/.test(icons.apple || ''), `ホーム画面用アイコンが PNG (${icons.apple})`);
+    for (const f of [icons.apple, icons.manifest, 'icon-192.png', 'icon-512.png',
+                     'icon-512-maskable.png', 'icon.svg']) {
+      const res = await page.request.get(URL + f.replace('./', ''));
+      ok(res.ok(), `${f} が配信される`);
+    }
+    ok(icons.title === '盤あわせ', `ホーム画面の名前 (${icons.title})`);
+
     section('画面');
     const fit = await page.evaluate(() => ({
       wide: document.documentElement.scrollWidth - document.documentElement.clientWidth,
