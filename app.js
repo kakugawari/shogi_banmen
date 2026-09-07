@@ -398,6 +398,17 @@
     resizing = setTimeout(function () { layout(); render(true); }, 120);
   });
 
+  /* オフラインで開けるようにする。
+   * 1枚にまとめたもの (Artifact) には sw.js が無いので、そちらでは登録しない。
+   * マニフェストの link は tools/bundle.js が落とすので、それを目じるしにする。 */
+  if ('serviceWorker' in navigator
+      && document.querySelector('link[rel="manifest"]')
+      && location.protocol.indexOf('http') === 0) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    });
+  }
+
   /* 自動テストから中身をのぞく入口 */
   window.__app = {
     state: function () { return state; },

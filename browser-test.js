@@ -11,6 +11,7 @@
 const { spawn } = require('node:child_process');
 const path = require('node:path');
 const http = require('node:http');
+const fs = require('node:fs');
 
 const PORT = Number(process.env.PORT || 8124);
 const URL = `http://localhost:${PORT}/`;
@@ -203,6 +204,37 @@ async function run() {
       fg: getComputedStyle(document.body).color
     }));
     ok(colors.bg !== colors.fg, `文字と背景の色が違う (${colors.bg} / ${colors.fg})`);
+
+    section('更新とオフライン');
+    const swCtx = await browser.newContext({ ...devices['iPhone 13'] });
+    const sw = await swCtx.newPage();
+    await sw.goto(URL);
+    await sw.waitForFunction(() => window.__app);
+    ok(await sw.evaluate(() => navigator.serviceWorker.ready.then((r) => !!r.active).catch(() => false)),
+      'サービスワーカーが動く');
+    await sw.waitForTimeout(800);
+
+    /* 直したものが 1 回のリロードで出るか。
+     * キャッシュ優先だとここで古い見出しが出る（kifu で踏んだやつ） */
+    const indexPath = path.join(ROOT, 'index.html');
+    const original = fs.readFileSync(indexPath, 'utf8');
+    fs.writeFileSync(indexPath, original.replace('<h1>盤あわせ</h1>', '<h1>こうしんかくにん</h1>'));
+    await sw.reload();
+    await sw.waitForTimeout(400);
+    const shown = (await sw.textContent('h1')).trim();
+    fs.writeFileSync(indexPath, original);
+    ok(shown === 'こうしんかくにん', `直したものが 1 回のリロードで出る (${shown})`);
+
+    await sw.reload();                       /* 元に戻したものを、もう一度キャッシュへ */
+    await sw.waitForTimeout(500);
+    await swCtx.setOffline(true);
+    await sw.reload().catch(() => {});
+    await sw.waitForTimeout(400);
+    ok(await sw.evaluate(() => !!window.__app).catch(() => false),
+      'ネットにつながらなくても開ける');
+    ok((await sw.textContent('h1')).trim() === '盤あわせ', 'オフラインでも中身は最新のもの');
+    await swCtx.setOffline(false);
+    await swCtx.close();
 
     section('エラー');
     ok(errors.length === 0, errors.length ? '画面のエラー: ' + errors.join(' / ') : 'JS エラーなし');
