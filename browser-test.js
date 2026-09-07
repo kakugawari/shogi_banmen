@@ -110,6 +110,15 @@ async function run() {
     ok(await page.locator('#s2').isHidden(), '写真のときは、コマ送りが出ない');
     ok(await page.locator('#s5').isVisible(), '直した盤の欄が出る');
 
+    section('合わせる前に満点を出さない');
+    const before = await page.evaluate(() => ({
+      touched: window.__app.state().touched,
+      text: document.getElementById('checks').textContent
+    }));
+    ok(before.touched === false, '四隅をまだ動かしていない状態から始まる');
+    ok(/まだ盤に合わせていません/.test(before.text), '合わせる前は点検の結果を出さない');
+    ok(!/ぴったり真上/.test(before.text), 'はじめの四隅（真四角）で満点を出さない');
+
     section('四隅を合わせる');
     await page.evaluate((cs) => window.__app.setCorners(cs), CORNERS);
     const judged = await page.evaluate(() => window.__app.judge());
@@ -149,8 +158,17 @@ async function run() {
     ok(others.every((p, i) => p.x === CORNERS[i + 1].x && p.y === CORNERS[i + 1].y),
       'ほかの三隅は動いていない');
 
+    ok(await page.evaluate(() => window.__app.state().touched), '動かしたので点検が始まる');
     const bad = await page.evaluate(() => window.__app.judge().find(j => j.key === 'taper'));
     ok(bad.level !== 'ok', `四隅をずらすと、真上の項目が ${bad.level} になる (${bad.value})`);
+
+    await page.locator('#reset').click();
+    const reset = await page.evaluate(() => ({
+      touched: window.__app.state().touched,
+      text: document.getElementById('checks').textContent
+    }));
+    ok(reset.touched === false && /まだ盤に合わせていません/.test(reset.text),
+      '「はじめの位置に戻す」で、合わせていない状態にも戻る');
     await page.evaluate((cs) => window.__app.setCorners(cs), CORNERS);
 
     section('速さ');

@@ -100,9 +100,12 @@ h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; gap:
 .ok   .mark { color: var(--green); }
 .warn .mark { color: var(--amber); }
 .bad  .mark { color: var(--red); }
+.todo .mark { color: var(--muted); }
+.todo .ck-body { color: var(--muted); }
 .ck-label { flex: none; width: 8.5em; color: var(--muted); }
 .ck-body { flex: 1; }
 .ck-hint { display: block; color: var(--muted); font-size: 12px; }
 .ok .ck-hint { display: none; }              /* うまくいっているときは直しかたを出さない */
+.todo .ck-hint { display: block; }
 
 footer { border-top: 1px solid var(--line); padding-top: 14px; }

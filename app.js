@@ -30,6 +30,7 @@
     pixels: null,                    /* 元の1コマの中身。直すときに使う */
     corners: null,                   /* 画像の座標。[左上, 右上, 右下, 左下] */
     sente: 'near',
+    touched: false,                  /* 四隅を一度でも動かしたか */
     drag: -1,
     view: { scale: 1 },              /* 画像の座標 → 画面の座標 */
     lastMs: 0
@@ -44,7 +45,7 @@
     src.height = state.height;
     srcCtx.drawImage(source, 0, 0, state.width, state.height);
     state.pixels = srcCtx.getImageData(0, 0, state.width, state.height).data;
-    if (!state.corners) state.corners = C.defaultCorners(state.width, state.height);
+    if (!state.corners) { state.corners = C.defaultCorners(state.width, state.height); state.touched = false; }
     layout();
     render(true);
   }
@@ -272,6 +273,19 @@
 
   function renderChecks(m) {
     els.checks.textContent = '';
+    /* はじめの四隅は真四角に置いてある。そのまま点検すると
+     * 「ぴったり真上・0.0°」と満点が出てしまい、撮り方を見た結果に見える。
+     * 一度も動かしていないうちは、点検の結果を出さない。 */
+    if (!state.touched) {
+      var todo = document.createElement('li');
+      todo.className = 'todo';
+      todo.innerHTML = '<span class="mark">…</span><span class="ck-body">まだ盤に合わせていません'
+        + '<span class="ck-hint">4つの点を、盤のマス目の四隅へ動かしてください。'
+        + '動かすと撮り方の点検が出ます。</span></span>';
+      els.checks.appendChild(todo);
+      els.perf.textContent = '';
+      return;
+    }
     if (!m) {
       var li = document.createElement('li');
       li.className = 'bad';
@@ -345,6 +359,7 @@
   function onUp() {
     if (state.drag < 0) return;
     state.drag = -1;
+    state.touched = true;
     els.loupe.classList.add('hidden');
     render(true);                                     /* 指を離してから直す */
   }
@@ -364,6 +379,7 @@
   els.fwd1.addEventListener('click', function () { seekTo(Number(els.seek.value) + 0.1); });
   els.reset.addEventListener('click', function () {
     state.corners = C.defaultCorners(state.width, state.height);
+    state.touched = false;
     render(true);
   });
   els.showGrid.addEventListener('change', function () { render(true); });
@@ -387,7 +403,11 @@
     state: function () { return state; },
     metrics: function () { return C.shotMetrics(state.corners); },
     judge: function () { return C.judge(C.shotMetrics(state.corners)); },
-    setCorners: function (cs) { state.corners = cs.map(function (p) { return { x: p.x, y: p.y }; }); render(true); },
+    setCorners: function (cs) {
+      state.corners = cs.map(function (p) { return { x: p.x, y: p.y }; });
+      state.touched = true;
+      render(true);
+    },
     setSide: setSide,
     boardPixel: function (x, y) {
       return Array.from(els.board.getContext('2d').getImageData(x, y, 1, 1).data);
