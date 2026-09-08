@@ -140,8 +140,26 @@ async function run() {
     judged.forEach(j => ok(j.level === 'ok', `${j.label}: ${j.value}`));
     const m = await page.evaluate(() => window.__app.metrics());
     ok(Math.abs(m.cellPx - 960 / 9) < 0.01, `1マス ${m.cellPx.toFixed(1)} 画素`);
-    const nextOk = await page.textContent('#next');
-    ok(/対局を録画してください/.test(nextOk), `全部◎なら録画をうながす (${nextOk.slice(0, 20)}…)`);
+    const done = await page.evaluate(() => {
+      const n = document.getElementById('next');
+      const b = document.getElementById('file2');
+      return {
+        head: document.getElementById('nextHead').textContent,
+        size: parseFloat(getComputedStyle(document.getElementById('nextHead')).fontSize),
+        msg: document.getElementById('nextMsg').textContent,
+        note: n.querySelector('.note').textContent.replace(/\s+/g, ''),
+        btn: !!b.closest('label').offsetParent,
+        accept: b.accept, capture: b.getAttribute('capture')
+      };
+    });
+    ok(/準備できました/.test(done.head), `終わったことが大きく出る (${done.head})`);
+    ok(done.size >= 18, `見出しの字が大きい (${done.size}px)`);
+    ok(/対局を録画してください/.test(done.msg), '全部◎なら録画をうながす');
+    ok(done.btn, '試し撮りのボタンが出る');
+    ok(done.accept === 'video/*' && done.capture === 'environment',
+      `試し撮りは動画をその場で撮る (accept=${done.accept} capture=${done.capture})`);
+    ok(/カメラ.アプリで撮って/.test(done.note) && /写真に残りません/.test(done.note),
+      '対局はカメラアプリで撮ること、ここでは写真に残らないことを断っている');
 
     section('先手はどちら側 (上下の取り違え見張り)');
     await page.evaluate(() => window.__app.setSide('near'));
@@ -200,9 +218,15 @@ async function run() {
     await page.mouse.up();
     const bad = await page.evaluate(() => window.__app.judge().find(j => j.key === 'taper'));
     ok(bad.level !== 'ok', `四隅をずらすと、真上の項目が ${bad.level} になる (${bad.value})`);
-    const nextBad = await page.textContent('#next');
-    ok(/真上からの度合い/.test(nextBad) && /もう一度撮って/.test(nextBad),
+    const nextBad = await page.evaluate(() => ({
+      head: document.getElementById('nextHead').textContent,
+      msg: document.getElementById('nextMsg').textContent,
+      btn: !!document.getElementById('file2').closest('label').offsetParent
+    }));
+    ok(/直すところがあります/.test(nextBad.head) && /真上からの度合い/.test(nextBad.msg)
+       && /もう一度撮って/.test(nextBad.msg),
       '直すところがあるときは、その名前を挙げて撮りなおしをうながす');
+    ok(!nextBad.btn, '直すところがあるうちは、試し撮りのボタンを出さない');
 
     await page.locator('#reset').click();
     const reset = await page.evaluate(() => ({

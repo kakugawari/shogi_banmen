@@ -112,7 +112,22 @@
       <canvas id="board"></canvas>
     </div>
     <ul class="checks" id="checks"></ul>
-    <p class="next hidden" id="next"></p>
+
+    <div class="next hidden" id="next">
+      <p class="next-head" id="nextHead"></p>
+      <p class="next-msg" id="nextMsg"></p>
+      <label class="pick">
+        <input type="file" id="file2" accept="video/*" capture="environment">
+        <span class="pick-face">動画で試し撮り</span>
+      </label>
+      <p class="note">
+        <b>対局そのものは、iPhone の「カメラ」アプリで撮ってください。</b>
+        ここで撮ったものは写真に残りません。<br>
+        写真で合わせたときは、いちど動画でも確かめてください。
+        <b>写真と動画では写る範囲が違います。</b>
+      </p>
+    </div>
+
     <p class="note" id="perf"></p>
   </section>
 

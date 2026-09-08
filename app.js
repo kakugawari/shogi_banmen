@@ -15,7 +15,8 @@
     s2: $('s2'), s3: $('s3'), s4: $('s4'), s5: $('s5'),
     seek: $('seek'), seekAt: $('seekAt'), back1: $('back1'), fwd1: $('fwd1'),
     shot: $('shot'), loupe: $('loupe'), reset: $('reset'), showGrid: $('showGrid'),
-    board: $('board'), checks: $('checks'), next: $('next'), perf: $('perf')
+    board: $('board'), checks: $('checks'),
+    next: $('next'), nextHead: $('nextHead'), nextMsg: $('nextMsg'), perf: $('perf')
   };
 
   /* 元の1コマは、いつも本来の大きさのまま裏の canvas に持っておく。
@@ -346,10 +347,11 @@
     var bad = list.filter(function (j) { return j.level !== 'ok'; });
     els.next.classList.remove('hidden');
     els.next.classList.toggle('todo', bad.length > 0);
-    els.next.textContent = bad.length
+    els.nextHead.textContent = bad.length ? '△ 直すところがあります' : '◎ 準備できました';
+    els.nextMsg.textContent = bad.length
       ? '「' + bad.map(function (j) { return j.label; }).join('」「') + '」を直して、'
         + 'もう一度撮ってください。直しかたは上に出ています。'
-      : 'この置き方でいけます。カメラをこのまま動かさずに、対局を録画してください。'
+      : 'アームをこのまま動かさずに、対局を録画してください。'
         + '撮った動画は、この先の段でそのまま使えます。';
   }
 
@@ -430,6 +432,13 @@
   /* ==================== つなぐ ==================== */
 
   els.file.addEventListener('change', function (e) { loadFile(e.target.files[0]); });
+  /* 試し撮り。対局そのものはカメラアプリで撮ってもらう。
+   * ここから撮ったものは写真に残らず、1局ぶんは数 GB になってブラウザで持てない。
+   * 短く撮って「動画でも同じ範囲に写るか」を確かめるためだけのもの。 */
+  $('file2').addEventListener('change', function (e) {
+    loadFile(e.target.files[0]);
+    els.s3.scrollIntoView({ block: 'start' });
+  });
   els.seek.addEventListener('input', function () { seekTo(Number(els.seek.value)); });
   els.back1.addEventListener('click', function () { seekTo(Number(els.seek.value) - 0.1); });
   els.fwd1.addEventListener('click', function () { seekTo(Number(els.seek.value) + 0.1); });

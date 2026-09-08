@@ -59,13 +59,23 @@ h1 { font-size: 22px; margin: 0; letter-spacing: .04em; }
 .howto .ok svg { outline: 2px solid var(--green); outline-offset: -2px; }
 .howto .ng svg { outline: 2px solid var(--red); outline-offset: -2px; }
 
-/* 点検のあと。次に何をすればいいかを、その場で言う */
+/* 点検のあと。次に何をすればいいかを、その場で言う。
+   ここが弱いと「合わせ終わったのに、で？」で止まる。 */
 .next {
-  margin: 12px 0 0; padding: 12px 14px; border-radius: 8px; font-size: 14px;
-  background: #F1F6F3; border: 1px solid #CFE0D6; color: var(--ink);
+  margin: 12px 0 0; padding: 16px; border-radius: 10px; font-size: 14px;
+  background: #F1F6F3; border: 2px solid var(--green); color: var(--ink);
 }
-.next.todo { background: #FBF3E4; border-color: #E8D6AE; }
+.next.todo { background: #FBF3E4; border-color: var(--amber); }
 .next.hidden { display: none; }
+.next-head {
+  margin: 0 0 6px; font-size: 19px; font-weight: 700; line-height: 1.4;
+  color: var(--green); display: flex; align-items: center; gap: 8px;
+}
+.next.todo .next-head { color: var(--amber); }
+.next-msg { margin: 0 0 12px; }
+.next .pick-face { display: block; text-align: center; }
+.next .note { margin-top: 10px; }
+.next.todo .pick { display: none; }      /* 直すところがあるうちは、試し撮りを出さない */
 
 .step { border-top: 1px solid var(--line); padding: 18px 0; }
 .step.hidden { display: none; }
