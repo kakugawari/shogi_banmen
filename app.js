@@ -15,7 +15,7 @@
     s2: $('s2'), s3: $('s3'), s4: $('s4'), s5: $('s5'),
     seek: $('seek'), seekAt: $('seekAt'), back1: $('back1'), fwd1: $('fwd1'),
     shot: $('shot'), loupe: $('loupe'), reset: $('reset'), showGrid: $('showGrid'),
-    board: $('board'), checks: $('checks'), perf: $('perf')
+    board: $('board'), checks: $('checks'), next: $('next'), perf: $('perf')
   };
 
   /* 元の1コマは、いつも本来の大きさのまま裏の canvas に持っておく。
@@ -292,6 +292,7 @@
         + '<span class="ck-hint">4つの点を、盤のマス目の四隅へ動かしてください。'
         + '動かすと撮り方の点検が出ます。</span></span>';
       els.checks.appendChild(todo);
+      els.next.classList.add('hidden');
       els.perf.textContent = '';
       return;
     }
@@ -321,6 +322,20 @@
     });
     els.perf.textContent = '直すのにかかった時間 ' + state.lastMs + ' ミリ秒'
       + '（' + els.board.width + '×' + els.board.height + ' 画素）';
+    renderNext(C.judge(m));
+  }
+
+  /* 点検が終わったら、次に何をすればいいかをその場で言う。
+   * ここで止まると「対局を始めれば記録される」と思われる。 */
+  function renderNext(list) {
+    var bad = list.filter(function (j) { return j.level !== 'ok'; });
+    els.next.classList.remove('hidden');
+    els.next.classList.toggle('todo', bad.length > 0);
+    els.next.textContent = bad.length
+      ? '「' + bad.map(function (j) { return j.label; }).join('」「') + '」を直して、'
+        + 'もう一度撮ってください。直しかたは上に出ています。'
+      : 'この置き方でいけます。カメラをこのまま動かさずに、対局を録画してください。'
+        + '撮った動画は、この先の段でそのまま使えます。';
   }
 
   /** heavy を true にしたときだけ、盤を直しなおす（指で動かしている間は重い） */

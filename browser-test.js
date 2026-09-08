@@ -113,6 +113,18 @@ async function run() {
     ok(await page.locator('#s2').isHidden(), '写真のときは、コマ送りが出ない');
     ok(await page.locator('#s5').isVisible(), '直した盤の欄が出る');
 
+    section('何をする道具かが、大きく出ている');
+    const lead = await page.evaluate(() => ({
+      text: document.querySelector('.lead').textContent.replace(/\s+/g, ''),
+      size: parseFloat(getComputedStyle(document.querySelector('.lead-head')).fontSize),
+      ok: !!document.querySelector('.howto .ok svg'),
+      ng: !!document.querySelector('.howto .ng svg')
+    }));
+    ok(/棋譜も出ません/.test(lead.text), '棋譜が出ないことを最初に言っている');
+    ok(/対局を録画/.test(lead.text), '次に何をすればいいかを言っている');
+    ok(lead.size >= 15, `本文より大きい字で出ている (${lead.size}px)`);
+    ok(lead.ok && lead.ng, '四隅の合わせ方を ◯ と × の絵で並べている');
+
     section('合わせる前に満点を出さない');
     const before = await page.evaluate(() => ({
       touched: window.__app.state().touched,
@@ -128,6 +140,8 @@ async function run() {
     judged.forEach(j => ok(j.level === 'ok', `${j.label}: ${j.value}`));
     const m = await page.evaluate(() => window.__app.metrics());
     ok(Math.abs(m.cellPx - 960 / 9) < 0.01, `1マス ${m.cellPx.toFixed(1)} 画素`);
+    const nextOk = await page.textContent('#next');
+    ok(/対局を録画してください/.test(nextOk), `全部◎なら録画をうながす (${nextOk.slice(0, 20)}…)`);
 
     section('先手はどちら側 (上下の取り違え見張り)');
     await page.evaluate(() => window.__app.setSide('near'));
@@ -142,6 +156,9 @@ async function run() {
     await page.evaluate(() => window.__app.setSide('near'));
 
     section('指で四隅を動かす');
+    /* 画面の外にあるものは指でつかめない。説明を足してページが伸びたぶん、
+     * ここまで送ってから測る */
+    await page.locator('#shot').scrollIntoViewIfNeeded();
     const box = await page.locator('#shot').boundingBox();
     const k = box.width / 1080;                      /* 画像 → 画面 */
     const at = (p) => ({ x: box.x + p.x * k, y: box.y + p.y * k });
@@ -164,6 +181,9 @@ async function run() {
     ok(await page.evaluate(() => window.__app.state().touched), '動かしたので点検が始まる');
     const bad = await page.evaluate(() => window.__app.judge().find(j => j.key === 'taper'));
     ok(bad.level !== 'ok', `四隅をずらすと、真上の項目が ${bad.level} になる (${bad.value})`);
+    const nextBad = await page.textContent('#next');
+    ok(/真上からの度合い/.test(nextBad) && /もう一度撮って/.test(nextBad),
+      '直すところがあるときは、その名前を挙げて撮りなおしをうながす');
 
     await page.locator('#reset').click();
     const reset = await page.evaluate(() => ({

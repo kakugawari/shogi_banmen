@@ -31,6 +31,41 @@ body { padding: 0 16px calc(32px + env(safe-area-inset-bottom)); max-width: 640p
 h1 { font-size: 22px; margin: 0; letter-spacing: .04em; }
 .sub { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
 
+/* 題のすぐ下。この道具が何で、何ではないかを最初に言う。
+   小さい注意書きを下に置いていたら、対局を録画すれば記録されると思われた。 */
+.lead {
+  background: #FFF8EC;
+  border: 1px solid #E6D6BB;
+  border-left: 5px solid var(--brown);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 14px 0 4px;
+}
+.lead p { margin: 0 0 6px; font-size: 14px; }
+.lead p:last-child { margin-bottom: 0; }
+.lead-head { font-size: 16px !important; }
+.lead-no { color: var(--red); }
+.lead-no b { color: var(--red); }
+
+/* 四隅の合わせ方。文字だけだと外枠に付けてしまうので、絵で並べて見せる */
+.howto { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 4px 0 12px; }
+.howto figure { margin: 0; }
+.howto svg { display: block; width: 100%; height: auto; border-radius: 6px; }
+.howto figcaption { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--muted); }
+.howto figcaption b { font-size: 14px; }
+.howto .ok figcaption b:first-child { color: var(--green); }
+.howto .ng figcaption b:first-child { color: var(--red); }
+.howto .ok svg { outline: 2px solid var(--green); outline-offset: -2px; }
+.howto .ng svg { outline: 2px solid var(--red); outline-offset: -2px; }
+
+/* 点検のあと。次に何をすればいいかを、その場で言う */
+.next {
+  margin: 12px 0 0; padding: 12px 14px; border-radius: 8px; font-size: 14px;
+  background: #F1F6F3; border: 1px solid #CFE0D6; color: var(--ink);
+}
+.next.todo { background: #FBF3E4; border-color: #E8D6AE; }
+.next.hidden { display: none; }
+
 .step { border-top: 1px solid var(--line); padding: 18px 0; }
 .step.hidden { display: none; }
 h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
