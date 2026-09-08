@@ -32,6 +32,8 @@
     sente: 'near',
     touched: false,                  /* 四隅を一度でも動かしたか */
     drag: -1,
+    grab: { x: 0, y: 0 },            /* つまんだ指と、点とのずれ */
+    pan: null,                       /* 四隅から外れた所をなぞったとき、画面を送る */
     view: { scale: 1 },              /* 画像の座標 → 画面の座標 */
     lastMs: 0
   };
@@ -117,11 +119,17 @@
   /* ==================== 画面に合わせる ==================== */
 
   function layout() {
+    /* 幅を測る前に、欄を出しておくこと。
+     * display:none のまま測ると clientWidth が 0 になり、逃げ道の 320 が使われる。
+     * どんな端末でも 320px 固定になって、四隅が合わせられなかった。 */
+    ['s3', 's4', 's5'].forEach(function (k) { els[k].classList.remove('hidden'); });
     var wrapW = els.shot.parentNode.clientWidth || 320;
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    /* 縦の動画をそのまま幅いっぱいに出すと、画面の 2 枚ぶんの高さになる。
-     * 四隅を直してから点検の結果を見るまでが遠くなるので、高さで頭を打たせる。 */
-    var maxH = Math.max(240, (window.innerHeight || 640) * 0.52);
+    /* 指でつまむものなので、横幅いっぱいに出す。小さいと四隅を合わせられない。
+     * いちど 0.52 画面ぶんに抑えたが、実際に使うと小さすぎた。
+     * 高さの上限は、とんでもなく縦長の画像よけの保険だけにする。
+     * ふつうの 9:16 の写真は、幅で決まって画面ぶんに収まる。 */
+    var maxH = Math.max(240, (window.innerHeight || 640) * 1.3);
     var scale = Math.min(wrapW / state.width, maxH / state.height);
     var cssW = Math.round(state.width * scale), cssH = Math.round(state.height * scale);
     els.shot.style.width = cssW + 'px';
@@ -129,7 +137,6 @@
     els.shot.width = Math.round(cssW * dpr);
     els.shot.height = Math.round(cssH * dpr);
     state.view.scale = scale * dpr;                  /* 画像 → canvas の画素 */
-    ['s3', 's4', 's5'].forEach(function (k) { els[k].classList.remove('hidden'); });
     renumber();
   }
 
@@ -208,7 +215,7 @@
 
   function drawLoupe(i) {
     var lp = els.loupe, ctx = lp.getContext('2d');
-    var p = state.corners[i], zoom = 3;
+    var p = state.corners[i], zoom = 3.5;
     var half = lp.width / (2 * zoom);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#EFEBE4';
@@ -221,6 +228,14 @@
     ctx.moveTo(lp.width / 2, 0); ctx.lineTo(lp.width / 2, lp.height);
     ctx.moveTo(0, lp.height / 2); ctx.lineTo(lp.width, lp.height / 2);
     ctx.stroke();
+    /* どの隅を動かしているか */
+    ctx.font = 'bold 15px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(35,29,22,.72)';
+    ctx.fillRect(0, 0, 26, 22);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(LABEL[i].charAt(0), 6, 4);
     /* 指の反対側に置く。指で隠れては意味がない */
     lp.classList.toggle('left', p.x / state.width > 0.5);
     lp.classList.remove('hidden');
@@ -360,8 +375,18 @@
       var d = Math.hypot(state.corners[i].x - p.x, state.corners[i].y - p.y);
       if (d < bestD) { bestD = d; best = i; }
     }
-    if (bestD > HIT * p.cssK) return;                 /* どの隅からも遠い */
+    if (bestD > HIT * p.cssK) {
+      /* どの隅からも遠い。写真は画面をほぼ埋めるので、ここで何もしないと
+       * touch-action: none のせいで画面が送れなくなる。自分で送る。 */
+      state.pan = { y: e.clientY, top: window.scrollY || window.pageYOffset || 0 };
+      els.shot.setPointerCapture(e.pointerId);
+      return;
+    }
     state.drag = best;
+    /* 点を指の位置へ吸い付かせない。つまんだときの差をそのまま保つ。
+     * 吸い付かせると、指の腹（40px ほど）で点がまるごと隠れて狙えない。
+     * 少し離れたところをつまめば、点は指の外に出たまま動く。 */
+    state.grab = { x: state.corners[best].x - p.x, y: state.corners[best].y - p.y };
     els.shot.setPointerCapture(e.pointerId);
     e.preventDefault();
     drawLoupe(best);
@@ -369,11 +394,17 @@
   }
 
   function onMove(e) {
+    if (state.pan) {
+      /* 指を離すまで、はじめに触れた所を基準に送る。1コマごとの差を足すと
+       * 送ったぶん画面が動いてずれが溜まる */
+      window.scrollTo(0, state.pan.top + (state.pan.y - e.clientY));
+      return;
+    }
     if (state.drag < 0) return;
     var p = atEvent(e);
     state.corners[state.drag] = {
-      x: Math.max(0, Math.min(state.width, p.x)),
-      y: Math.max(0, Math.min(state.height, p.y))
+      x: Math.max(0, Math.min(state.width, p.x + state.grab.x)),
+      y: Math.max(0, Math.min(state.height, p.y + state.grab.y))
     };
     e.preventDefault();
     drawLoupe(state.drag);
@@ -381,6 +412,7 @@
   }
 
   function onUp() {
+    if (state.pan) { state.pan = null; return; }
     if (state.drag < 0) return;
     state.drag = -1;
     state.touched = true;

@@ -47,12 +47,13 @@ h1 { font-size: 22px; margin: 0; letter-spacing: .04em; }
 .lead-no { color: var(--red); }
 .lead-no b { color: var(--red); }
 
-/* 四隅の合わせ方。文字だけだと外枠に付けてしまうので、絵で並べて見せる */
-.howto { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 4px 0 12px; }
-.howto figure { margin: 0; }
-.howto svg { display: block; width: 100%; height: auto; border-radius: 6px; }
-.howto figcaption { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--muted); }
-.howto figcaption b { font-size: 14px; }
+/* 四隅の合わせ方。文字だけだと外枠に付けてしまうので、絵で見せる。
+   ただし小さく。画面の主役は写真のほうで、こちらは添えもの。 */
+.howto { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 2px 0 10px; }
+.howto figure { margin: 0; display: flex; align-items: center; gap: 8px; }
+.howto svg { display: block; width: 46px; height: auto; border-radius: 4px; flex: none; }
+.howto figcaption { font-size: 12px; line-height: 1.4; color: var(--muted); }
+.howto figcaption b { font-size: 13px; }
 .howto .ok figcaption b:first-child { color: var(--green); }
 .howto .ng figcaption b:first-child { color: var(--red); }
 .howto .ok svg { outline: 2px solid var(--green); outline-offset: -2px; }
@@ -107,7 +108,7 @@ h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; gap:
 /* 四隅をつまんでいる間だけ出る虫めがね */
 .loupe {
   position: absolute; top: 8px; right: 8px;
-  width: 88px; height: 88px; border-radius: 50%;
+  width: 118px; height: 118px; border-radius: 50%;
   border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.3);
   pointer-events: none;
 }

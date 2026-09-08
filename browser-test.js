@@ -179,6 +179,25 @@ async function run() {
       'ほかの三隅は動いていない');
 
     ok(await page.evaluate(() => window.__app.state().touched), '動かしたので点検が始まる');
+    /* 点を指の位置へ吸い付かせない。吸い付かせると指の腹で点が隠れて狙えない。
+     * 少し離れたところをつまんでも、つまんだときの差を保ったまま動くこと。 */
+    await page.evaluate((cs) => window.__app.setCorners(cs), CORNERS);
+    const off = 30;                                  /* 隅から 30 画素ずらしてつまむ */
+    const grabAt = at({ x: CORNERS[0].x + off, y: CORNERS[0].y + off });
+    await page.mouse.move(grabAt.x, grabAt.y);
+    await page.mouse.down();
+    await page.mouse.move(grabAt.x + 60 * k, grabAt.y + 40 * k);
+    await page.mouse.up();
+    const kept = await page.evaluate(() => window.__app.state().corners[0]);
+    ok(Math.abs(kept.x - (CORNERS[0].x + 60)) < 12 && Math.abs(kept.y - (CORNERS[0].y + 40)) < 12,
+      `離れた所をつまんでも、点は指に吸い付かず同じだけ動く (${Math.round(kept.x)}, ${Math.round(kept.y)})`);
+
+    await page.evaluate((cs) => window.__app.setCorners(cs), CORNERS);
+    const shrink = at({ x: CORNERS[0].x, y: CORNERS[0].y });
+    await page.mouse.move(shrink.x, shrink.y);
+    await page.mouse.down();
+    await page.mouse.move(shrink.x + 120 * k, shrink.y + 120 * k);
+    await page.mouse.up();
     const bad = await page.evaluate(() => window.__app.judge().find(j => j.key === 'taper'));
     ok(bad.level !== 'ok', `四隅をずらすと、真上の項目が ${bad.level} になる (${bad.value})`);
     const nextBad = await page.textContent('#next');
@@ -193,6 +212,36 @@ async function run() {
     ok(reset.touched === false && /まだ盤に合わせていません/.test(reset.text),
       '「はじめの位置に戻す」で、合わせていない状態にも戻る');
     await page.evaluate((cs) => window.__app.setCorners(cs), CORNERS);
+
+    section('写真の上でも画面が送れる');
+    /* 写真は画面をほぼ埋める。touch-action: none なので、四隅から外れた所を
+     * なぞったときは自分で画面を送らないと、動けなくなる */
+    await page.locator('#shot').scrollIntoViewIfNeeded();
+    const scrollBase = await page.evaluate(() => window.scrollY);
+    const mid = await page.locator('#shot').boundingBox();
+    const vh = await page.evaluate(() => window.innerHeight);
+    /* 画面の中に入っていて、どの隅からも遠いところ（横は真ん中） */
+    const mx = mid.x + mid.width / 2;
+    const my = Math.max(mid.y + 40, Math.min(mid.y + mid.height * 0.5, vh - 60));
+    await page.mouse.move(mx, my);
+    await page.mouse.down();
+    await page.mouse.move(mx, my - 150, { steps: 5 });
+    await page.mouse.up();
+    const scrolled = await page.evaluate(() => window.scrollY) - scrollBase;
+    ok(scrolled > 100, `四隅から外れた所をなぞると画面が送れる (${Math.round(scrolled)}px 送った)`);
+    const untouched = await page.evaluate(() => window.__app.state().corners);
+    ok(untouched.every((p, i) => Math.abs(p.x - CORNERS[i].x) < 1 && Math.abs(p.y - CORNERS[i].y) < 1),
+      '画面を送っても四隅は動かない');
+    await page.evaluate(() => window.scrollTo(0, 0));
+
+    section('大きさ');
+    /* 指でつまむものなので、写真は横幅いっぱいに出す。小さいと合わせられない */
+    const fit2 = await page.evaluate(() => {
+      const cv = document.getElementById('shot');
+      return { w: cv.getBoundingClientRect().width, wrap: cv.parentNode.clientWidth };
+    });
+    ok(fit2.w >= fit2.wrap * 0.95,
+      `写真が横幅いっぱいに出る (${Math.round(fit2.w)} / ${Math.round(fit2.wrap)} px)`);
 
     section('速さ');
     const ms = await page.evaluate(() => window.__app.state().lastMs);

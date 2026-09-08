@@ -65,7 +65,7 @@
           <g stroke="#7A5A2E" stroke-width="0.7" opacity=".8"><path d="M28.9 20v92M37.8 20v92M46.7 20v92M55.6 20v92M64.4 20v92M73.3 20v92M82.2 20v92M91.1 20v92M20 30.2h80M20 40.4h80M20 50.7h80M20 60.9h80M20 71.1h80M20 81.3h80M20 91.6h80M20 101.8h80"/></g>
           <g fill="#32C8F0" stroke="#fff" stroke-width="2"><circle cx="20" cy="20" r="7"/><circle cx="100" cy="20" r="7"/><circle cx="100" cy="112" r="7"/><circle cx="20" cy="112" r="7"/></g>
         </svg>
-        <figcaption><b>◯</b> マス目の<b>いちばん外側の線</b>が交わる4点</figcaption>
+        <figcaption><b>◯</b> マス目の角</figcaption>
       </figure>
 
       <figure class="ng">
@@ -76,15 +76,15 @@
           <g stroke="#7A5A2E" stroke-width="0.7" opacity=".8"><path d="M28.9 20v92M37.8 20v92M46.7 20v92M55.6 20v92M64.4 20v92M73.3 20v92M82.2 20v92M91.1 20v92M20 30.2h80M20 40.4h80M20 50.7h80M20 60.9h80M20 71.1h80M20 81.3h80M20 91.6h80M20 101.8h80"/></g>
           <g fill="#B23A2E" stroke="#fff" stroke-width="2"><circle cx="8" cy="8" r="7"/><circle cx="112" cy="8" r="7"/><circle cx="112" cy="124" r="7"/><circle cx="8" cy="124" r="7"/></g>
         </svg>
-        <figcaption><b>×</b> 木の縁や、<b>筋・段の番号の帯</b>まで入れる</figcaption>
+        <figcaption><b>×</b> 外枠・番号の帯まで入れる</figcaption>
       </figure>
     </div>
 
-    <p class="note"><b>合っていれば、重ねた水色の線が盤の線にぴったり乗ります。</b>
-      乗っていなければ四隅がずれています。</p>
+    <p class="note"><b>水色の線が盤の線に乗れば合っています。</b>
+      点は指のすこし横をつまむと、隠れずに動かせます。</p>
     <div class="canvas-wrap">
       <canvas id="shot"></canvas>
-      <canvas id="loupe" class="loupe hidden" width="132" height="132"></canvas>
+      <canvas id="loupe" class="loupe hidden" width="176" height="176"></canvas>
     </div>
     <div class="row">
       <button type="button" class="btn" id="reset">はじめの位置に戻す</button>
