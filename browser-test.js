@@ -152,14 +152,26 @@ async function run() {
         accept: b.accept, capture: b.getAttribute('capture')
       };
     });
-    ok(/準備できました/.test(done.head), `終わったことが大きく出る (${done.head})`);
+    /* 写真で合わせただけでは「準備できました」ではない。
+     * 動画にすると写る範囲が変わって四隅がずれる（実際にそうなった） */
+    ok(/動画で確かめて/.test(done.head), `写真のときは「準備できました」と出さない (${done.head})`);
     ok(done.size >= 18, `見出しの字が大きい (${done.size}px)`);
-    ok(/対局を録画してください/.test(done.msg), '全部◎なら録画をうながす');
+    ok(/写る範囲が変わり/.test(done.msg), '写真では写る範囲が変わることを言う');
     ok(done.btn, '試し撮りのボタンが出る');
     ok(done.accept === 'video/*' && done.capture === 'environment',
       `試し撮りは動画をその場で撮る (accept=${done.accept} capture=${done.capture})`);
     ok(/カメラ.アプリで撮って/.test(done.note) && /写真に残りません/.test(done.note),
       '対局はカメラアプリで撮ること、ここでは写真に残らないことを断っている');
+
+    section('写真か動画かを、選んだその場で言う');
+    const warn = await page.evaluate(() => {
+      const w = document.getElementById('srcWarn');
+      return { shown: !w.classList.contains('hidden'), ok: w.classList.contains('ok'),
+               text: w.textContent.replace(/\s+/g, '') };
+    });
+    ok(warn.shown && !warn.ok, '写真のときは注意として出す');
+    ok(/写る範囲が違います/.test(warn.text) && /動画でも撮って確かめて/.test(warn.text),
+      '写る範囲が違うこと、動画で確かめることを言っている');
 
     section('先手はどちら側 (上下の取り違え見張り)');
     await page.evaluate(() => window.__app.setSide('near'));
@@ -236,6 +248,61 @@ async function run() {
     ok(reset.touched === false && /まだ盤に合わせていません/.test(reset.text),
       '「はじめの位置に戻す」で、合わせていない状態にも戻る');
     await page.evaluate((cs) => window.__app.setCorners(cs), CORNERS);
+
+    section('動画でも通る');
+    /* 動画の道はこれまで一度も通していなかった。
+     * その場で webm を作って流しこみ、コマが取れるところまで見る。 */
+    const madeVideo = await page.evaluate(`(async () => {
+      const cv = document.createElement('canvas'); cv.width = 1080; cv.height = 1920;
+      const g = cv.getContext('2d');
+      const draw = () => {
+        g.fillStyle = '#3a3a3a'; g.fillRect(0, 0, 1080, 1920);
+        g.fillStyle = '#E8C88A'; g.fillRect(${BOARD.x}, ${BOARD.y}, ${BOARD.size}, ${BOARD.size});
+      };
+      draw();
+      let rec;
+      try { rec = new MediaRecorder(cv.captureStream(10)); } catch (e) { return 'unsupported'; }
+      const chunks = [];
+      rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      rec.start();
+      for (let i = 0; i < 12; i++) { draw(); await new Promise(r => setTimeout(r, 40)); }
+      await new Promise(r => { rec.onstop = r; rec.stop(); });
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      if (!blob.size) return 'empty';
+      const dt = new DataTransfer();
+      dt.items.add(new File([blob], 'ban.webm', { type: 'video/webm' }));
+      const i = document.getElementById('file');
+      i.files = dt.files;
+      i.dispatchEvent(new Event('change', { bubbles: true }));
+      return 'ok';
+    })()`);
+    if (madeVideo !== 'ok') {
+      console.log('  \x1b[90m- とばした: この環境では動画を作れない (' + madeVideo + ')\x1b[0m');
+    } else {
+      await page.waitForFunction(() => window.__app.state().kind === 'video', { timeout: 15000 });
+      await page.waitForFunction(() => window.__app.state().pixels, { timeout: 15000 });
+      const vid = await page.evaluate(() => {
+        const st = window.__app.state();
+        /* まっさらなコマを取っていないか。loadedmetadata で取ると空になることがある */
+        let lit = 0;
+        for (let i = 3; i < st.pixels.length; i += 4000) if (st.pixels[i] > 0) lit++;
+        return { w: st.width, h: st.height, lit: lit,
+                 seek: !document.getElementById('s2').classList.contains('hidden'),
+                 warn: document.getElementById('srcWarn').classList.contains('ok'),
+                 info: document.getElementById('fileInfo').textContent };
+      });
+      ok(vid.w === 1080 && vid.h === 1920, `動画の幅と高さが取れる (${vid.w}×${vid.h})`);
+      ok(vid.lit > 0, `1コマ目が取れている (まっさらではない)`);
+      ok(vid.seek, '動画のときはコマ送りが出る');
+      ok(vid.warn, '動画のときは注意ではなく「本番と同じ範囲」と出す');
+      await page.evaluate((cs) => window.__app.setCorners(cs), CORNERS);
+      const vhead = await page.textContent('#nextHead');
+      ok(/準備できました/.test(vhead), `動画で合わせたときだけ「準備できました」(${vhead})`);
+      /* 写真に戻して、あとの節を元の前提で続ける */
+      await page.evaluate(`(async () => {${MAKE_PHOTO(BOARD)}})()`);
+      await page.waitForFunction(() => window.__app.state().kind === 'image');
+      await page.evaluate((cs) => window.__app.setCorners(cs), CORNERS);
+    }
 
     section('写真の上でも画面が送れる');
     /* 写真は画面をほぼ埋める。touch-action: none なので、四隅から外れた所を

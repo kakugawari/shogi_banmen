@@ -16,7 +16,8 @@
     seek: $('seek'), seekAt: $('seekAt'), back1: $('back1'), fwd1: $('fwd1'),
     shot: $('shot'), loupe: $('loupe'), reset: $('reset'), showGrid: $('showGrid'),
     board: $('board'), checks: $('checks'),
-    next: $('next'), nextHead: $('nextHead'), nextMsg: $('nextMsg'), perf: $('perf')
+    next: $('next'), nextHead: $('nextHead'), nextMsg: $('nextMsg'),
+    srcWarn: $('srcWarn'), perf: $('perf')
   };
 
   /* 元の1コマは、いつも本来の大きさのまま裏の canvas に持っておく。
@@ -72,6 +73,20 @@
     return s;
   }
 
+  /* 写真で合わせたのか、動画で合わせたのかを、選んだその場で言う。
+   * 静止画はセンサー全面、動画はその切り取りなので、写る範囲が違う。
+   * 写真で合わせてから動画を撮ると、実際にずれる。 */
+  function showSource() {
+    var photo = state.kind === 'image';
+    els.srcWarn.classList.remove('hidden');
+    els.srcWarn.classList.toggle('ok', !photo);
+    els.srcWarn.innerHTML = photo
+      ? '<b>これは写真です。</b>本番の動画とは<b>写る範囲が違います</b>'
+        + '（静止画はセンサー全面、動画はその切り取り）。<br>'
+        + 'ここで合わせた四隅は、動画ではずれます。<b>かならず動画でも撮って確かめてください。</b>'
+      : '<b>動画で合わせています。</b>本番と同じ写る範囲です。';
+  }
+
   function loadFile(file) {
     if (!file) return;
     state.corners = null;
@@ -90,10 +105,14 @@
         els.seek.max = String(state.duration || 1);
         els.seek.step = '0.02';
         els.fileInfo.textContent = describe();
+        showSource();
         els.s2.classList.remove('hidden');
         renumber();
-        seekTo(0);
       }, { once: true });
+      /* コマを取るのは loadeddata から。loadedmetadata の時点では
+       * 幅と高さは分かっていても、1コマ目がまだ来ていないことがある。
+       * そこで描くと、まっさらな絵を取ってしまう。 */
+      v.addEventListener('loadeddata', function () { seekTo(0); }, { once: true });
       v.addEventListener('seeked', function () {
         els.seekAt.textContent = fmtTime(v.currentTime);
         grabFrom(v);
@@ -108,6 +127,7 @@
         state.width = img.naturalWidth; state.height = img.naturalHeight;
         state.duration = 0;
         els.fileInfo.textContent = describe();
+        showSource();
         els.s2.classList.add('hidden');
         grabFrom(img);
         URL.revokeObjectURL(url);
@@ -345,14 +365,27 @@
    * ここで止まると「対局を始めれば記録される」と思われる。 */
   function renderNext(list) {
     var bad = list.filter(function (j) { return j.level !== 'ok'; });
+    var photo = state.kind === 'image';
     els.next.classList.remove('hidden');
     els.next.classList.toggle('todo', bad.length > 0);
-    els.nextHead.textContent = bad.length ? '△ 直すところがあります' : '◎ 準備できました';
-    els.nextMsg.textContent = bad.length
-      ? '「' + bad.map(function (j) { return j.label; }).join('」「') + '」を直して、'
-        + 'もう一度撮ってください。直しかたは上に出ています。'
-      : 'アームをこのまま動かさずに、対局を録画してください。'
-        + '撮った動画は、この先の段でそのまま使えます。';
+    /* 数字が通っても、写真で合わせただけなら「準備できました」ではない。
+     * 動画にすると写る範囲が変わって、四隅がずれる。 */
+    els.next.classList.toggle('photo', bad.length === 0 && photo);
+
+    if (bad.length) {
+      els.nextHead.textContent = '△ 直すところがあります';
+      els.nextMsg.textContent = '「' + bad.map(function (j) { return j.label; }).join('」「')
+        + '」を直して、もう一度撮ってください。直しかたは上に出ています。';
+    } else if (photo) {
+      els.nextHead.textContent = '△ あと一歩　動画で確かめてください';
+      els.nextMsg.textContent = '数字は問題ありません。ただし、いま合わせているのは写真です。'
+        + '動画にすると写る範囲が変わり、四隅がずれます。'
+        + '下のボタンで短く撮って、動画でも同じ数字が出るか確かめてください。';
+    } else {
+      els.nextHead.textContent = '◎ 準備できました';
+      els.nextMsg.textContent = '動画で合わせられました。アームをこのまま動かさずに、'
+        + '対局を録画してください。撮った動画は、この先の段でそのまま使えます。';
+    }
   }
 
   /** heavy を true にしたときだけ、盤を直しなおす（指で動かしている間は重い） */

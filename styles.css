@@ -69,13 +69,17 @@ h1 { font-size: 22px; margin: 0; letter-spacing: .04em; }
 .next.hidden { display: none; }
 .next-head {
   margin: 0 0 6px; font-size: 19px; font-weight: 700; line-height: 1.4;
-  color: var(--green); display: flex; align-items: center; gap: 8px;
+  color: var(--green);
+  text-wrap: balance;                    /* 折り返して1文字だけ次の行に落ちるのを防ぐ */
 }
 .next.todo .next-head { color: var(--amber); }
 .next-msg { margin: 0 0 12px; }
 .next .pick-face { display: block; text-align: center; }
 .next .note { margin-top: 10px; }
 .next.todo .pick { display: none; }      /* 直すところがあるうちは、試し撮りを出さない */
+/* 数字は通ったが、まだ写真で合わせただけ。試し撮りが次の一手なので、ボタンは出す */
+.next.photo { background: #FBF3E4; border-color: var(--amber); }
+.next.photo .next-head { color: var(--amber); }
 
 .step { border-top: 1px solid var(--line); padding: 18px 0; }
 .step.hidden { display: none; }
@@ -104,6 +108,18 @@ h2 { font-size: 16px; margin: 0 0 10px; display: flex; align-items: center; gap:
 }
 .btn:active { background: var(--line); }
 .check { font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+
+/* 写真で合わせているのか、動画で合わせているのか。
+   写真と動画では写る範囲が違うので、これを黙っていると本番でずれる。 */
+.srcwarn {
+  margin: 10px 0 0; padding: 11px 13px; border-radius: 8px;
+  font-size: 13px; line-height: 1.6;
+  background: #FBF3E4; border: 1px solid var(--amber); color: var(--ink);
+}
+.srcwarn.ok { background: #F1F6F3; border-color: var(--green); }
+.srcwarn.hidden { display: none; }
+.srcwarn b { color: var(--amber); }
+.srcwarn.ok b { color: var(--green); }
 
 .seek { display: flex; align-items: center; gap: 10px; }
 #seek { flex: 1; accent-color: var(--brown); }
